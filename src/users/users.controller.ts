@@ -10,6 +10,7 @@ import {
   NotFoundException,
   UseInterceptors,
   ClassSerializerInterceptor,
+  Session,
 } from '@nestjs/common';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UsersService } from './users.service';
@@ -19,15 +20,44 @@ import {
   MyInterceptor,
 } from 'src/interceptors/serialize.interceptor';
 import { UserDto } from './dtos/user.dto';
+import { AuthService } from './auth.service';
+import { CurrentUser } from './decorator/current-user.decorator';
 
 @Controller('auth')
 export class UsersController {
-  constructor(private _user: UsersService) {}
+  constructor(private _user: UsersService, private _auth: AuthService) {}
   @Post('/signup')
-  create(@Body() body: CreateUserDto) {
-    return this._user.create(body.email, body.password);
+  async create(@Body() body: CreateUserDto, @Session() session: any) {
+    // return this._user.create(body.email, body.password);
+    const user = await this._auth.signup(body.email, body.password);
+    session.userId = user.id;
+    return user;
   }
-  @Get()
+  @Post('/signin')
+  async signin(@Body() Body: CreateUserDto, @Session() session: any) {
+    const user = this._auth.signin(Body.email, Body.password);
+    session.userId = (await user).id;
+    return user;
+  }
+
+  // @Get('/who')
+  // who(@Session() Session: any) {
+  //   return this._user.findOne1(Session.userId);
+  // }
+
+  @Get('/who')
+  who(@CurrentUser() user: any) {
+    return user;
+  }
+
+  @Post('/signout')
+  signout(@Session() Session: any) {
+    Session.userId = null;
+    return {
+      message: 'logout successfully',
+    };
+  }
+
   //Custom interceptor
   @MInterceptor(UserDto)
   getAll() {
