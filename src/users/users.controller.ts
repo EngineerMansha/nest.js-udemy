@@ -9,6 +9,7 @@ import {
   Patch,
   NotFoundException,
   UseInterceptors,
+  UseGuards,
   ClassSerializerInterceptor,
   Session,
 } from '@nestjs/common';
@@ -22,8 +23,12 @@ import {
 import { UserDto } from './dtos/user.dto';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './decorator/current-user.decorator';
-
+// import { CurrentUserInterceptor } from './interceptor/current-user-intercepter';
+import { UserEntity } from './users.entity';
+import { AuthGuard } from 'src/guards/auth.guard';
 @Controller('auth')
+// for One Controller we use this method
+// @UseInterceptors(CurrentUserInterceptor)
 export class UsersController {
   constructor(private _user: UsersService, private _auth: AuthService) {}
   @Post('/signup')
@@ -44,9 +49,9 @@ export class UsersController {
   // who(@Session() Session: any) {
   //   return this._user.findOne1(Session.userId);
   // }
-
+  @UseGuards(AuthGuard)
   @Get('/who')
-  who(@CurrentUser() user: any) {
+  who(@CurrentUser() user: UserEntity) {
     return user;
   }
 
@@ -59,6 +64,7 @@ export class UsersController {
   }
 
   //Custom interceptor
+  @UseGuards(AuthGuard)
   @MInterceptor(UserDto)
   getAll() {
     return this._user.findAll();
@@ -72,15 +78,17 @@ export class UsersController {
     }
     return user;
   }
+  @UseGuards(AuthGuard)
   @Get()
   getAllUser(@Query('email') email: string) {
     return this._user.find(email);
   }
-
+  @UseGuards(AuthGuard)
   @Delete('/:id')
   removeUser(@Param('id') id: string) {
     return this._user.remove(parseInt(id));
   }
+  @UseGuards(AuthGuard)
   @Patch('/:id')
   updateUser(@Param('id') id: string, @Body() body: UserUpdateDto) {
     return this._user.update(parseInt(id), body);
