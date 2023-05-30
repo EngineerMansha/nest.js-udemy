@@ -2,6 +2,7 @@
 .env.development
 .env.test
 test.sqlite
+db.sqlite
 /dist
 /node_modules
 
